@@ -1,0 +1,47 @@
+import java.util.*;
+
+public class PasswordSimilarity {
+
+    private static boolean isNext(char a, char b) {
+        // returns true if incrementing a once (cyclic) equals b
+        return (a == 'z' ? 'a' : (char)(a + 1)) == b;
+    }
+
+    // returns "YES" if old is subsequence of some +1-edited new
+    private static String similar(String newPw, String oldPw) {
+        int j = 0, m = oldPw.length();
+
+        for (int i = 0; i < newPw.length() && j < m; i++) {
+            char c = newPw.charAt(i);
+            char need = oldPw.charAt(j);
+            if (c == need || isNext(c, need)) {
+                j++;                       // consume need
+            }
+        }
+        return (j == m) ? "YES" : "NO";
+    }
+
+    /* ------------- public API ----------------- */
+    public static List<String> findSimilarities(String[] newPasswords,
+                                                String[] oldPasswords) {
+        int n = newPasswords.length;
+        List<String> ans = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            ans.add(similar(newPasswords[i], oldPasswords[i]));
+        }
+        return ans;
+    }
+
+    // ----- quick demo -----
+    public static void main(String[] args) {
+        String[] newP = {"baacbab", "accdb", "baacba",
+                         "aaccbbee", "aab",
+                         "aaaa", "bzz"};
+        String[] oldP = {"abdbc",   "ach",   "abb",
+                         "bdbf",    "aee",
+                         "bcd",     "az"};
+
+        System.out.println(findSimilarities(newP, oldP));
+        // → [YES, NO, YES, YES, NO, NO, YES]
+    }
+}
