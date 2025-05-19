@@ -1,0 +1,75 @@
+import java.util.*;
+
+public class AmazonSecurePassword {
+
+    private static final int MOD = 1_000_000_007;
+
+    /**
+     * Counts subsequences of s that are lexicographically greater than t.
+     * @param s customer's password (|s| ≤ 1e5)
+     * @param t system password   (|t| ≤ 100)
+     * @return answer mod 1e9+7
+     */
+    public static int countSecuredStrings(String s, String t) {
+        int n = s.length();
+        int m = t.length();
+
+        // pre‑compute powers of 2 up to n
+        long[] pow2 = new long[n + 1];
+        pow2[0] = 1;
+        for (int i = 1; i <= n; i++) {
+            pow2[i] = (pow2[i - 1] << 1) % MOD;
+        }
+
+        // dpNext[j] == answer for suffix s[i+1:] vs t[j:]
+        long[] dpNext = new long[m + 1];
+        long[] dpCurr = new long[m + 1];
+
+        // base row for i == n (empty suffix). dpNext[m] = 0, others 0 => already 0’s.
+        Arrays.fill(dpNext, 0);
+
+        for (int i = n - 1; i >= 0; i--) {
+            char c = s.charAt(i);
+
+            // j == m  → we already matched whole t, any **non‑empty** continuation is greater.
+            dpCurr[m] = (pow2[n - i] - 1 + MOD) % MOD; // subtract empty suffix
+
+            for (int j = m - 1; j >= 0; j--) {
+                long res = dpNext[j];                 // skip c
+                char d = t.charAt(j);
+                if (c > d) {
+                    // taking c already makes string greater, free choice on rest
+                    res += pow2[n - i - 1];
+                } else if (c == d) {
+                    // must continue comparing
+                    res += dpNext[j + 1];
+                }
+                dpCurr[j] = res % MOD;
+            }
+            // roll rows
+            long[] tmp = dpNext; dpNext = dpCurr; dpCurr = tmp;
+        }
+        return (int) dpNext[0];
+    }
+
+    // ------------------- driver -------------------
+    public static void main(String[] args) {
+        String s1 = "aba", t1 = "ab";
+        System.out.println("Test 1 → " + countSecuredStrings(s1, t1)); // 3
+
+        String s2 = "bab", t2 = "ab";
+        System.out.println("Test 2 → " + countSecuredStrings(s2, t2)); // 5
+
+        String s3 = "abcde", t3 = "abc";
+        System.out.println("Test 3 → " + countSecuredStrings(s3, t3)); // 29
+
+        String s4 = "aaaaa", t4 = "aaaa";
+        System.out.println("Test 4 → " + countSecuredStrings(s4, t4)); // 1
+
+        // large test (sanity only – prints value mod MOD)
+        char[] big = new char[100000];
+        Arrays.fill(big, 'z');
+        System.out.println("Large → " + countSecuredStrings(new String(big), "a"));
+    }
+}
+
