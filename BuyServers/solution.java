@@ -88,3 +88,89 @@ public class Solution {
         // Expected: 5
     }
 }
+--------------------------------------------------------------------------------------------------------------------------------------
+
+import java.util.*;
+
+public class Solution {
+    /**
+     * Returns the minimum total price to get total power ≥ target,
+     * or -1 if impossible.
+     */
+    public static int minCostToPurchaseServers(
+        int[] power,
+        int[] price,
+        int target
+    ) {
+        int n = power.length;
+
+        // 1) Separate into price‑1 and price‑2 lists
+        List<Integer> A = new ArrayList<>();
+        List<Integer> B = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            if (price[i] == 1) A.add(power[i]);
+            else             B.add(power[i]);
+        }
+
+        // 2) Sort descending
+        Collections.sort(A, Collections.reverseOrder());
+        Collections.sort(B, Collections.reverseOrder());
+
+        // 3) Build prefix sums (0-based, with pref[0]=0)
+        long[] prefA = new long[A.size()+1], prefB = new long[B.size()+1];
+        for (int i = 0; i < A.size(); i++) {
+            prefA[i+1] = prefA[i] + A.get(i);
+        }
+        for (int j = 0; j < B.size(); j++) {
+            prefB[j+1] = prefB[j] + B.get(j);
+        }
+
+        int ans = Integer.MAX_VALUE;
+        int maxB = B.size();
+
+        // 4) Try taking j machines from B (cost 2j), 0 ≤ j ≤ maxB
+        for (int j = 0; j <= maxB; j++) {
+            long powerB = prefB[j];
+            long need = target - powerB;
+            if (need <= 0) {
+                // Enough power with B alone
+                ans = Math.min(ans, 2*j);
+            } else {
+                // Binary search smallest i with prefA[i] ≥ need
+                int i = lowerBound(prefA, need);
+                if (i != -1) {
+                    ans = Math.min(ans, 2*j + i);
+                }
+            }
+        }
+
+        return (ans == Integer.MAX_VALUE ? -1 : ans);
+    }
+
+    // Returns smallest index i in pref such that pref[i] ≥ target,
+    // or -1 if none.
+    private static int lowerBound(long[] pref, long target) {
+        int lo = 0, hi = pref.length; // hi = n+1
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (pref[mid] >= target) hi = mid;
+            else                     lo = mid + 1;
+        }
+        return lo < pref.length ? lo : -1;
+    }
+
+    // ——— Sample Tests ———
+    public static void main(String[] args) {
+        test(new int[]{4,4,6,7}, new int[]{1,1,2,2}, 7,   2);
+        test(new int[]{5,5,5,5}, new int[]{2,2,2,2}, 7,  -1);
+        test(new int[]{10,1,10}, new int[]{1,2,1}, 19,  3);
+        test(new int[]{8,2,4,7},  new int[]{1,2,1,2}, 15, 4);
+        test(new int[]{1},       new int[]{2},       1,   -1);
+    }
+
+    private static void test(int[] p, int[] c, int t, int exp) {
+        int ans = minCostToPurchaseServers(p, c, t);
+        System.out.printf("power=%s, price=%s, target=%d → %d (exp=%d)%n",
+            Arrays.toString(p), Arrays.toString(c), t, ans, exp);
+    }
+}
